@@ -10,10 +10,10 @@ contract StakingCon {
     using SafeMath for uint256;
 
     //一天的秒数
-    uint private secondsForOneDay = 86400;//86400;
+    uint private constant secondsForOneDay = 86400;//86400;
 
     //时区调整
-    uint private timeZoneDiff = 28800;
+    uint private constant timeZoneDiff = 28800;
 
     //admin control
     //contract owner address
@@ -25,7 +25,6 @@ contract StakingCon {
 
     //IERC FLT token Obj
     address public _fltTokenContract;
-    IERC20 private _cfltTokenContract;
 
     //fltTokenContract
     address public _filTokenContract;
@@ -67,16 +66,6 @@ contract StakingCon {
     mapping(uint => minePoolWrapper) public minePoolMap;
 
     mapping(address => userOrder[]) public userData;
-
-    //miner info
-    struct minerInfoList{
-        uint[] info;
-        address minerAddress;
-        bool isEntity;
-    }
-
-    // minerInterest 
-    mapping(address => minerInfoList) public minerInterest;
 
     address[] public minerPool;
     
@@ -180,15 +169,6 @@ contract StakingCon {
         _;
     }
 
-    //used for add admin control 
-    modifier onlyAdmin() { // Modifier
-        require(
-            msg.sender == _admin,
-            "Only admin can call this."
-        );
-        _;
-    }
-
     //lock the contract for safing 
     modifier swithOn() { // Modifier
         require(
@@ -198,18 +178,44 @@ contract StakingCon {
         _;
     }
 
+    /**
+     * @dev event for setting a new admin account
+    */
+    event SetAdminEvent(address newAdminUser);
+
+    /**
+     * @dev event for changing switch state
+    */
+    event SwithOnContractEvent(bool operate);
+
+    /**
+     * @dev event for adding FILE token contract address
+    */
+    event AddFLTTokenContractEvent(address fltToken);
+
+    /**
+     * @dev event for adding FIL token contract address
+    */
+    event AddFILTokenContractEvent(address filTokenCon);
+
+
     //owner set a admin permission
-    function setAdmin(address newAdminUser) external onlyOwner{
+    function setAdmin(address newAdminUser) external onlyOwner returns (bool){
+        require(newAdminUser != address(0), "StakingCon:setAdmin: new admin user is the zero address");
+        emit SetAdminEvent(newAdminUser);
         _admin = newAdminUser;
+        return true;
     }
 
     //switch on or off the contract 
-    function swithOnContract(bool op) external ownerAndAdmin{
+    function swithOnContract(bool op) external ownerAndAdmin returns (bool){
+        emit SwithOnContractEvent(op);
         _swithOn = op;
+        return true;
     }
 
     // transfer current owner to a new owner account
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Ownable: new owner is the zero address");
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
@@ -218,7 +224,7 @@ contract StakingCon {
     //===================================user operate ==================================================
     //stake for user
 
-    function stake(uint256 amount,uint poolID) public swithOn returns(bool){
+    function stake(uint256 amount,uint poolID) external swithOn returns(bool){
         //todo user need to be checked 
         require(minePoolMap[poolID].isEntity,"current pool does not exist");
         require(minePoolMap[poolID].mPool.actionType == 1,"current pool action type mismatch");
@@ -304,10 +310,11 @@ contract StakingCon {
         return true;
     }
 
-    function redeem(uint orderID, bool withdrawType) public swithOn returns(bool){
+    function redeem(uint orderID, bool withdrawType) external returns(bool){
 
         require(userData[msg.sender].length > 0,"cannot find this user from contract for redeem");
         //calculate the rules
+        require(userData[msg.sender][orderID].user!=address(0),"stakingCon:redeem: cannot find the user order with current order id");
         userOrder memory uOrder = userData[msg.sender][orderID];
 
         require(minePoolMap[uOrder.poolID].isEntity,"no pool can be found");
@@ -341,9 +348,9 @@ contract StakingCon {
         uint updateDayTime = convertToDayTime(userData[msg.sender][orderID].ratioInfo.admineUpdateTime);
         updateDayTime = updateDayTime.sub(userCreateDayTime);
 
-        if(curSubDayTime >= minePoolMap[uOrder.poolID].mPool.lockInterval && curSubDayTime < minePoolMap[uOrder.poolID].mPool.expireType){
+        if(curSubDayTime < minePoolMap[uOrder.poolID].mPool.expireType){
             require(updateDayTime >= minePoolMap[uOrder.poolID].mPool.lockInterval.sub(1) ,"not allow redeem because update fee has not come for LOCK days"); 
-        }else if (curSubDayTime >= minePoolMap[uOrder.poolID].mPool.expireType){
+        }else{
             require(updateDayTime >= minePoolMap[uOrder.poolID].mPool.expireType.sub(1) ,"not allow redeem because update fee has not come for EXP days");    
         }
 
@@ -352,7 +359,7 @@ contract StakingCon {
         uint256 diffGas = 0;
         if (curSubDayTime >= minePoolMap[uOrder.poolID].mPool.expireType){
             lastForTransfer = userData[msg.sender][orderID].amount;
-            userData[msg.sender][orderID].stopDayTime = curSubDayTime;
+            userData[msg.sender][orderID].stopDayTime = curDayTime;
             isExpire = true;
 
         }else{
@@ -383,8 +390,10 @@ contract StakingCon {
         return true;
     }
 
-    function getProfit(uint plID,uint orderID) public swithOn returns ( bool ){
+    function getProfit(uint plID,uint orderID) external returns ( bool ){
         require(userData[msg.sender].length > 0,"cannot find this user from contract for withdraw");
+        require(userData[msg.sender][orderID].user!=address(0),"stakingCon:getProfit: cannot find current user with order ID");
+
         require(userData[msg.sender][orderID].poolID == plID, "pool id does not match with current order");
         require(_filTokenContract != address(0),"has not set fil token contract");
 
@@ -431,7 +440,7 @@ contract StakingCon {
         updateMineInput memory updateParas,
         uint256[] memory poolThredhold,
         uint[] memory serviceFeePercent
-    ) public ownerAndAdmin swithOn returns (bool){
+    ) external ownerAndAdmin swithOn returns (bool){
         //update the amount of a certain contract
         if (minePoolMap[updateParas.poolID].isEntity){
             //an old one
@@ -560,7 +569,7 @@ contract StakingCon {
         uint256 needToPayGasFee;
     }
 
-    function updateOrderFee(updateUserOrderType[] memory updateOrders) public ownerAndAdmin swithOn returns (bool){
+    function updateOrderFee(updateUserOrderType[] memory updateOrders) external ownerAndAdmin swithOn returns (bool){
         require(updateOrders.length > 0, "please input the right data for updateOrderFee");
         for (uint i = 0 ;i < updateOrders.length;i++){
    
@@ -589,14 +598,18 @@ contract StakingCon {
     }
 
     //add flt token contract;
-    function addFLTTokenContract(address fltToken) public ownerAndAdmin swithOn returns (bool){
+    function addFLTTokenContract(address fltToken) external ownerAndAdmin swithOn returns (bool){
+        require(fltToken != address(0),"stakingCon:addFLTTokenContract: fltToken address is zero");
         _fltTokenContract = fltToken;
+        emit AddFLTTokenContractEvent(fltToken);
         return true;
     }
 
     //add fil token contract for profit;
-    function addFILTokenContract(address filTokenCon) public ownerAndAdmin swithOn returns (bool){
+    function addFILTokenContract(address filTokenCon) external ownerAndAdmin swithOn returns (bool){
+        require(filTokenCon != address(0),"stakingCon:addFILTokenContract: filToken address is zero");
         _filTokenContract = filTokenCon;
+        emit AddFILTokenContractEvent(filTokenCon);
         return true;
     }
 
@@ -615,7 +628,7 @@ contract StakingCon {
     // }
 
     // //miner get tokens from certain pool with flt 
-    function minerRetrieveToken(uint poolID,uint256 amount) public swithOn returns (bool){
+    function minerRetrieveToken(uint poolID,uint256 amount) external swithOn returns (bool){
 
         require(minePoolMap[poolID].isEntity,"current pool does not exist");
 
@@ -663,19 +676,20 @@ contract StakingCon {
     }
 
     //convert current time to day time
-    function convertToDayTime(uint forConvertTime) internal returns (uint){
+    function convertToDayTime(uint forConvertTime) internal view returns (uint){
         return forConvertTime.add(timeZoneDiff).div(secondsForOneDay);
     }
 
     //check if it is Premium
 
-    function checkisPremium(uint256 amount,uint256[] memory levelThredhold) internal returns (uint){
+    function checkisPremium(uint256 amount,uint256[] memory levelThredhold) internal pure returns (uint){
         
         uint isPrem = 0;
-        for (uint i = 0;i <levelThredhold.length ; i++){
+        for (uint i = levelThredhold.length.sub(1);i >= 0 ; i--){
             // powerToToken = levelThredhold[i].mul(stakingPrice).mul(tokenToFILRate).div(10**18).div(10**18);
             if (amount >= levelThredhold[i]){
                 isPrem = i;
+                break;
             }
         }
         return isPrem;
@@ -683,9 +697,9 @@ contract StakingCon {
 
     //convert token to power
    
-    function convertTokenToPower(uint256 amount, uint poolID) internal returns (uint256){
+    function convertTokenToPower(uint256 amount, uint poolID) internal view returns (uint256){
         // (( (tokenamount / (10**precision)) / (tokenRate / FILRate) ) / (stakingPrice / 10**18)) * (10**18)
-        return amount.div(10**minePoolMap[poolID].mPool.tokenPrecision).mul(10**18).mul(10**18).mul(minePoolMap[poolID].mPool.FILRate).div(minePoolMap[poolID].mPool.tokenRate).div(minePoolMap[poolID].mPool.stakingPrice);
+        return amount.mul(10**18).mul(10**18).mul(minePoolMap[poolID].mPool.FILRate).div(minePoolMap[poolID].mPool.tokenRate).div(minePoolMap[poolID].mPool.stakingPrice).div(10**minePoolMap[poolID].mPool.tokenPrecision);
     }
 
     //adjust time for test
