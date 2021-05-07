@@ -127,7 +127,7 @@ contract FILE is Context, ERC20, ERC20Detailed {
     }
 
     /**
-     * @dev mint token for user (`user,amount`).
+     * @dev mint token for bridge (`amount`).
      * Can only be called by the current owner.
      */
     function mintFILEForBridge(uint256 amount) external onlyOwner returns(bool){
@@ -135,6 +135,22 @@ contract FILE is Context, ERC20, ERC20Detailed {
         require(totalSupplyLimit >= totalSupply().add(amount),"FILE::mintFILEForUser: minting has exceeded totalSupplyLimit");
 
         _mint(polyPoxyCon,amount);
+        return true;
+    }
+
+
+    //update bridge contract event
+    event UpdateBridgeEvent(address bridgeCon);
+    /**
+     * @dev add different bridge solution contract address
+     * Can only be called by the current owner.
+     */
+    function updateBridgeContractAddre(address bridgeCon) external onlyOwner returns(bool){
+        require(bridgeCon != address(0),"FILE:updateBridgeContractAddre: update bridge contract");
+
+        polyPoxyCon = bridgeCon;
+        emit UpdateBridgeEvent(bridgeCon);
+
         return true;
     }
 }
