@@ -414,6 +414,11 @@ contract StakingCon {
 
     //===================================admin operate==================================================
 
+    /**
+     * @dev event for updating miner pool
+    */
+    event UpdateMinePoolEvent(uint poolID,address contr,uint256  hasSoldOutToken);
+
     //add contract to contract and also add pool amount 
     struct updateMineInput{
         uint        poolID;            
@@ -556,9 +561,23 @@ contract StakingCon {
             minePoolMap[updateParas.poolID].mPool.tokenPrecision = updateParas.tokenPrecision;
 
         }
+
+        emit UpdateMinePoolEvent(updateParas.poolID,updateParas.contr,updateParas.hasSoldOutToken);
         return true;
 
     }
+
+    /**
+     * @dev event for updating user order fee
+    */
+    event UpdateOrderFeeEvent(
+        address userAddress,
+        uint    orderID,
+        uint    updateTime,
+        uint256 activeInterest,
+        uint256 FrozenInterest,
+        uint256 needToPayGasFee
+    );
 
     struct updateUserOrderType {
         address userAddress;
@@ -585,6 +604,7 @@ contract StakingCon {
                     userData[updateOrders[i].userAddress][updateOrders[i].orderID].ratioInfo.oActiveInterest = updateOrders[i].activeInterest;
                     userData[updateOrders[i].userAddress][updateOrders[i].orderID].ratioInfo.oFrozenInterest = updateOrders[i].FrozenInterest;
                     userData[updateOrders[i].userAddress][updateOrders[i].orderID].ratioInfo.oNeedToPayGasFee = updateOrders[i].needToPayGasFee;
+                    emit UpdateOrderFeeEvent(updateOrders[i].userAddress,updateOrders[i].orderID,updateOrders[i].updateTime,updateOrders[i].activeInterest,updateOrders[i].FrozenInterest,updateOrders[i].needToPayGasFee);
                 }
                 else if (convertToDayTime(updateOrders[i].updateTime) >= cDayTime.add(minePoolMap[poolIDForex].mPool.expireType).sub(1)){
 
@@ -627,6 +647,11 @@ contract StakingCon {
     //     return true;
     // }
 
+    event MinerRetrieveTokenEvent(
+        address user,
+        uint    poolID,
+        uint256 amount
+    );
     // //miner get tokens from certain pool with flt 
     function minerRetrieveToken(uint poolID,uint256 amount) external swithOn returns (bool){
 
@@ -642,7 +667,7 @@ contract StakingCon {
         uint256 getPower = convertTokenToPower(amount,poolID);
         require(IERC20(_fltTokenContract).transferFrom(msg.sender,address(this),getPower),"failed to transfer file from user to contract");
         require(minePoolMap[poolID].mPool.tokenInterface.transfer(msg.sender,amount),"failed to transfer flt from user to contract");
-
+        emit MinerRetrieveTokenEvent(msg.sender,poolID,amount);
         return true;        
     }
 
