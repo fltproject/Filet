@@ -356,7 +356,7 @@ contract StakingCon {
 
         uint256 lastForTransfer = 0 ;
         bool isExpire = false;
-        uint256 diffGas = 0;
+        uint256 Fee = 0;
         if (curSubDayTime >= minePoolMap[uOrder.poolID].mPool.expireType){
             lastForTransfer = userData[msg.sender][orderID].amount;
             userData[msg.sender][orderID].stopDayTime = curDayTime;
@@ -365,10 +365,10 @@ contract StakingCon {
         }else{
             //((gasFIL /10**18 )* tokenRate / FILRate) * 10 ** tokenPrecision 
             uint256 partialCalc = uOrder.ratioInfo.oNeedToPayGasFee.mul(minePoolMap[uOrder.poolID].mPool.tokenRate).mul(10**minePoolMap[uOrder.poolID].mPool.tokenPrecision);
-            diffGas = partialCalc.div(minePoolMap[uOrder.poolID].mPool.FILRate).div(10**18) ;
+            Fee = partialCalc.div(minePoolMap[uOrder.poolID].mPool.FILRate).div(10**18) ;
       
-            if (userData[msg.sender][orderID].amount > diffGas ){
-                lastForTransfer = userData[msg.sender][orderID].amount.sub(diffGas);
+            if (userData[msg.sender][orderID].amount > Fee ){
+                lastForTransfer = userData[msg.sender][orderID].amount.sub(Fee);
             }
 
             userData[msg.sender][orderID].stopDayTime = curDayTime;
@@ -386,7 +386,7 @@ contract StakingCon {
             forEvent = _fltTokenContract;
         }
 
-        emit eventRedeem(msg.sender,orderID,diffGas,isExpire,forEvent);
+        emit eventRedeem(msg.sender,orderID,Fee,isExpire,forEvent);
         return true;
     }
 
