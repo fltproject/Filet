@@ -124,7 +124,7 @@ contract StakingCon {
     */
 
     //minePool mPool
-    event eventUserStaking(
+    event EventUserStaking(
         address     user,
         uint        orderID,
         uint256     amount,
@@ -139,12 +139,12 @@ contract StakingCon {
     /**
      * @dev event for redeem operating when expiring
     */
-    event eventRedeem(address user,uint orderID,uint256 fee,bool isExpire,address mPool);
+    event EventRedeem(address user,uint orderID,uint256 fee,bool isExpire,address mPool);
 
     /**
      * @dev event for withdraw operating
     */
-    event eventWithDraw(address user,uint poolID,uint orderID,uint256 profitAmount);
+    event EventWithDraw(address user,uint poolID,uint orderID,uint256 profitAmount);
 
     //parameters : HFIL token, 
     constructor() {
@@ -186,7 +186,7 @@ contract StakingCon {
     /**
      * @dev event for changing switch state
     */
-    event switchOnContractEvent(bool operate);
+    event SwitchOnContractEvent(bool operate);
 
     /**
      * @dev event for adding FILE token contract address
@@ -209,7 +209,7 @@ contract StakingCon {
 
     //switch on or off the contract 
     function switchOnContract(bool op) external ownerAndAdmin returns (bool){
-        emit switchOnContractEvent(op);
+        emit SwitchOnContractEvent(op);
         _switchOn = op;
         return true;
     }
@@ -296,7 +296,7 @@ contract StakingCon {
 
         minePoolMap[poolID].mPool.hasSoldOutToken = minePoolMap[poolID].mPool.hasSoldOutToken.add(amount);
 
-        emit eventUserStaking(
+        emit EventUserStaking(
             msg.sender,
             userData[msg.sender].length - 1,
             amount,
@@ -338,7 +338,7 @@ contract StakingCon {
             // require(IERC20(_fltTokenContract).transferFrom(minePoolMap[uOrder.poolID].mPool.redeemFundAccount,msg.sender,uOrder.amount),"failed to redeem from file pool in contract");
             userData[msg.sender][orderID].stopDayTime = curDayTime;
 
-            emit eventRedeem(msg.sender,orderID,0,false,_fltTokenContract);
+            emit EventRedeem(msg.sender,orderID,0,false,_fltTokenContract);
             return true;
         }
 
@@ -386,7 +386,7 @@ contract StakingCon {
             forEvent = _fltTokenContract;
         }
 
-        emit eventRedeem(msg.sender,orderID,Fee,isExpire,forEvent);
+        emit EventRedeem(msg.sender,orderID,Fee,isExpire,forEvent);
         return true;
     }
 
@@ -406,7 +406,7 @@ contract StakingCon {
         require(IERC20(_filTokenContract).transferFrom(minePoolMap[plID].mPool.redeemFundAccount,msg.sender,interestShouldSend),"failed to withdraw profit for current");
         userData[msg.sender][orderID].ratioInfo.oHasReceiveInterest = userData[msg.sender][orderID].ratioInfo.oActiveInterest;
 
-        emit eventWithDraw( msg.sender,plID,orderID,interestShouldSend);
+        emit EventWithDraw( msg.sender,plID,orderID,interestShouldSend);
 
         return true;
 
