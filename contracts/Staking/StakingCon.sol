@@ -20,8 +20,8 @@ contract StakingCon {
     address private _owner;
     address private _admin;
 
-    //contract swith
-    bool private _swithOn = false;
+    //contract switch
+    bool private _switchOn = false;
 
     //IERC FLT token Obj
     address public _fltTokenContract;
@@ -170,10 +170,10 @@ contract StakingCon {
     }
 
     //lock the contract for safing 
-    modifier swithOn() { // Modifier
+    modifier switchOn() { // Modifier
         require(
-            _swithOn,
-            "swith is off"
+            _switchOn,
+            "switch is off"
         );
         _;
     }
@@ -186,7 +186,7 @@ contract StakingCon {
     /**
      * @dev event for changing switch state
     */
-    event SwithOnContractEvent(bool operate);
+    event switchOnContractEvent(bool operate);
 
     /**
      * @dev event for adding FILE token contract address
@@ -208,9 +208,9 @@ contract StakingCon {
     }
 
     //switch on or off the contract 
-    function swithOnContract(bool op) external ownerAndAdmin returns (bool){
-        emit SwithOnContractEvent(op);
-        _swithOn = op;
+    function switchOnContract(bool op) external ownerAndAdmin returns (bool){
+        emit switchOnContractEvent(op);
+        _switchOn = op;
         return true;
     }
 
@@ -224,7 +224,7 @@ contract StakingCon {
     //===================================user operate ==================================================
     //stake for user
 
-    function stake(uint256 amount,uint poolID) external swithOn returns(bool){
+    function stake(uint256 amount,uint poolID) external switchOn returns(bool){
         //todo user need to be checked 
         require(minePoolMap[poolID].isEntity,"current pool does not exist");
         require(minePoolMap[poolID].mPool.actionType == 1,"current pool action type mismatch");
@@ -445,7 +445,7 @@ contract StakingCon {
         updateMineInput memory updateParas,
         uint256[] memory poolThredhold,
         uint[] memory serviceFeePercent
-    ) external ownerAndAdmin swithOn returns (bool){
+    ) external ownerAndAdmin switchOn returns (bool){
         //update the amount of a certain contract
         if (minePoolMap[updateParas.poolID].isEntity){
             //an old one
@@ -588,7 +588,7 @@ contract StakingCon {
         uint256 needToPayGasFee;
     }
 
-    function updateOrderFee(updateUserOrderType[] memory updateOrders) external ownerAndAdmin swithOn returns (bool){
+    function updateOrderFee(updateUserOrderType[] memory updateOrders) external ownerAndAdmin switchOn returns (bool){
         require(updateOrders.length > 0, "please input the right data for updateOrderFee");
         for (uint i = 0 ;i < updateOrders.length;i++){
    
@@ -618,7 +618,7 @@ contract StakingCon {
     }
 
     //add flt token contract;
-    function addFLTTokenContract(address fltToken) external ownerAndAdmin swithOn returns (bool){
+    function addFLTTokenContract(address fltToken) external ownerAndAdmin switchOn returns (bool){
         require(fltToken != address(0),"stakingCon:addFLTTokenContract: fltToken address is zero");
         _fltTokenContract = fltToken;
         emit AddFLTTokenContractEvent(fltToken);
@@ -626,7 +626,7 @@ contract StakingCon {
     }
 
     //add fil token contract for profit;
-    function addFILTokenContract(address filTokenCon) external ownerAndAdmin swithOn returns (bool){
+    function addFILTokenContract(address filTokenCon) external ownerAndAdmin switchOn returns (bool){
         require(filTokenCon != address(0),"stakingCon:addFILTokenContract: filToken address is zero");
         _filTokenContract = filTokenCon;
         emit AddFILTokenContractEvent(filTokenCon);
@@ -634,7 +634,7 @@ contract StakingCon {
     }
 
     //pledge for active the selling power;
-    // function inputFLTForActivePower(uint poolID,uint256 amount) public swithOn returns (bool){
+    // function inputFLTForActivePower(uint poolID,uint256 amount) public switchOn returns (bool){
 
     //     require(minePoolMap[poolID].isEntity,"current pool does not exist");
 
@@ -653,7 +653,7 @@ contract StakingCon {
         uint256 amount
     );
     // //miner get tokens from certain pool with flt 
-    function minerRetrieveToken(uint poolID,uint256 amount) external swithOn returns (bool){
+    function minerRetrieveToken(uint poolID,uint256 amount) external switchOn returns (bool){
 
         require(minePoolMap[poolID].isEntity,"current pool does not exist");
 
@@ -672,7 +672,7 @@ contract StakingCon {
     }
 
     //miner get tokens from certain pool with flt 
-    // function minerRetrieveFILE(uint poolID,uint256 amount) public swithOn returns (bool){
+    // function minerRetrieveFILE(uint poolID,uint256 amount) public switchOn returns (bool){
 
     //     require(minePoolMap[poolID].isEntity,"current pool does not exist");
 
