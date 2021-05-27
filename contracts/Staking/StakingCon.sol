@@ -198,6 +198,10 @@ contract StakingCon {
     */
     event AddFILTokenContractEvent(address filTokenCon);
 
+    /**
+     * @dev event for mark fee changes
+    */
+    event MarkingFeeChanges(address user,uint orderID,uint256 activeInterest, uint256 fee);
 
     //owner set a admin permission
     function setAdmin(address newAdminUser) external onlyOwner returns (bool){
@@ -363,6 +367,12 @@ contract StakingCon {
             isExpire = true;
 
         }else{
+            //make sure user will not loss any staking money
+            if (uOrder.ratioInfo.oActiveInterest < uOrder.ratioInfo.oNeedToPayGasFee ){
+                emit MarkingFeeChanges(msg.sender,orderID,uOrder.ratioInfo.oActiveInterest,uOrder.ratioInfo.oNeedToPayGasFee);
+                uOrder.ratioInfo.oNeedToPayGasFee = uOrder.ratioInfo.oActiveInterest;
+            }
+            
             //((gasFIL /10**18 )* tokenRate / FILRate) * 10 ** tokenPrecision 
             uint256 partialCalc = uOrder.ratioInfo.oNeedToPayGasFee.mul(minePoolMap[uOrder.poolID].mPool.tokenRate).mul(10**minePoolMap[uOrder.poolID].mPool.tokenPrecision);
             Fee = partialCalc.div(minePoolMap[uOrder.poolID].mPool.FILRate).div(10**18) ;
