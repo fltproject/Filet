@@ -14,6 +14,7 @@ Filet is a Filecoin mining power tokenization protocol that deployed on the File
 ### Partner
 + https://www.topblocks.io/
 
+### Contact us
 + Telegram: https://t.me/filet_finance
 + Twitter: https://twitter.com/Filet_finance
 + Blog: https://www.filet.finance/blog_en/
